@@ -7,35 +7,36 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
 <style>
   html,body{margin:0;height:100%;background:#000;color:#F1EFE8;font-family:system-ui,Roboto,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
-  .wrap{box-sizing:border-box;height:100vh;padding:5vh 5vw 5vh 7vw;display:grid;grid-template-columns:1.55fr 1fr;grid-template-rows:1fr auto;gap:4vh 4vw}
-  .gr{font-size:min(8vh,4vw);font-weight:500;color:#CECBF6;display:flex;align-items:center;gap:1.5vw}
-  .clk{font-family:"Roboto Mono","Droid Sans Mono",monospace;font-size:min(34vh,15.5vw);font-weight:500;line-height:1;margin-top:1vh;color:#FFFFFF}
-  .sec{font-size:.33em;color:#B4B2A9}
-  .dt{font-size:min(7vh,3.4vw);color:#D3D1C7;margin-top:2vh}
-  .wx{border-left:1px solid #444441;padding-left:4vw;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
-  .wx i{font-size:min(26vh,12vw);line-height:1}
-  .tmp{font-size:min(16vh,7.5vw);font-weight:500;line-height:1.15}
-  .wd{font-size:min(6vh,3vw);color:#D3D1C7}
-  .tm{font-size:min(5.5vh,2.7vw);color:#B4B2A9;margin-top:1.5vh}
-  .bot{grid-column:1/3;display:grid;grid-template-columns:1fr 1fr;gap:2.5vw}
-  .card{background:#2C2C2A;border-radius:2vh;padding:2.2vh 2.5vw;font-size:min(6vh,2.9vw);color:#E6E4DC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wrap{box-sizing:border-box;height:100vh;padding:4vh 5vw 4vh 7vw;display:flex;flex-direction:column;justify-content:space-between}
+  .top{display:flex;justify-content:space-between;align-items:center;font-size:min(7vh,3.4vw)}
+  .gr{font-weight:500;color:#CECBF6;display:flex;align-items:center;gap:1.2vw;white-space:nowrap}
+  .dt{color:#D3D1C7;white-space:nowrap}
+  .clk{text-align:center;font-size:min(54vh,27vw);font-weight:500;line-height:.95;color:#FFFFFF;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .sec{font-size:.25em;color:#B4B2A9;letter-spacing:0;margin-left:.15em}
+  .wx{display:flex;justify-content:center;align-items:center;gap:2.2vw;white-space:nowrap;font-size:min(6vh,3vw);color:#D3D1C7}
+  .wx i{font-size:min(10vh,5vw);line-height:1}
+  .tmp{font-size:min(9vh,4.5vw);font-weight:500;color:#F1EFE8}
+  .tm{color:#B4B2A9}
+  .bot{display:grid;grid-template-columns:1fr 1fr;gap:2.5vw}
+  .card{background:#2C2C2A;border-radius:2vh;padding:1.8vh 2.5vw;font-size:min(5.5vh,2.7vw);color:#E6E4DC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .card i{margin-right:1vw}
-  body.night .gr{color:#AFA9EC}
-  body.night .sec,body.night .dt,body.night .wx,body.night .card{opacity:.6}
+  body.night .gr{color:#7F77DD}
+  body.night .clk{color:#B4B2A9}
+  body.night .sec,body.night .dt,body.night .wx,body.night .card{opacity:.45}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div>
+  <div class="top">
     <div class="gr"><i class="ti ti-rocket" id="gi" style="color:#AFA9EC"></i><span id="gr">Merhaba Atahan</span></div>
-    <div class="clk"><span id="hm">--:--</span><span class="sec" id="ss">:--</span></div>
     <div class="dt" id="dt"></div>
   </div>
+  <div class="clk"><span id="hm">--:--</span><span class="sec" id="ss">:--</span></div>
   <div class="wx">
     <i class="ti ti-cloud" id="wi" style="color:#B4B2A9"></i>
-    <div class="tmp" id="wt">--°</div>
-    <div class="wd" id="wd">Hava durumu yükleniyor</div>
-    <div class="tm" id="wtm"></div>
+    <span class="tmp" id="wt">--°</span>
+    <span id="wd">Hava durumu yükleniyor</span>
+    <span class="tm" id="wtm"></span>
   </div>
   <div class="bot">
     <div class="card" id="sc"><i class="ti ti-backpack" style="color:#5DCAA5"></i>Ders programı eklenecek</div>
@@ -99,11 +100,9 @@ async function havaGetir(){
     $("wi").className="ti "+ic; $("wi").style.color=renk;
     $("wt").textContent=Math.round(c.temperature_2m)+"°";
     const o=oneri(d.weather_code[i],d.temperature_2m_min[i],d.precipitation_probability_max[i]);
-    $("wd").textContent=ad+" · "+(aksam?"yarın ":"")+o;
-    const [ic2]=hava(d.weather_code[1],true);
-    $("wtm").innerHTML=aksam
-      ? 'Yarın <i class="ti '+ic2+'"></i> '+Math.round(d.temperature_2m_max[1])+"° / "+Math.round(d.temperature_2m_min[1])+"°"
-      : "Bugün "+Math.round(d.temperature_2m_max[0])+"° / "+Math.round(d.temperature_2m_min[0])+"°";
+    const oo=aksam?"yarın "+o:o;
+    $("wd").textContent=ad+" · "+oo.charAt(0).toLocaleUpperCase("tr")+oo.slice(1);
+    $("wtm").textContent=(aksam?"Yarın ":"Bugün ")+Math.round(d.temperature_2m_max[i])+"° / "+Math.round(d.temperature_2m_min[i])+"°";
   }catch(e){
     $("wd").textContent="Hava bilgisi alınamadı";
   }
@@ -117,7 +116,7 @@ function okulKarti(d){
   let metin;
   if(g===0||g===6) metin=etiket+" okul yok, iyi tatiller";
   else if(DERS[g]) metin=etiket+": "+DERS[g];
-  else metin=etiket+" "+GUN[g]+" · ders programı eklenecek";
+  else metin="Ders programı eklenecek";
   $("sc").innerHTML='<i class="ti ti-backpack" style="color:#5DCAA5"></i>'+metin;
 }
 
