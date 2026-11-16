@@ -58,7 +58,19 @@ const DERS = {
   4: "",
   5: ""
 };
+// "Atahan Okul" Google Takvimi (Apps Script web uygulaması)
+const TAKVIM_URL = "https://script.google.com/macros/s/AKfycbxl-pXDz_2vnWYrYFTTdnsAdYWTBupBK8jgtshBvTmy1t9h2VwOlnXQsycCMGh7FBjeBg/exec";
 /* ============================================== */
+let etkinlikler = [];
+async function takvimGetir(){
+  try{
+    const r=await fetch(TAKVIM_URL,{cache:"no-store"});
+    const j=await r.json();
+    if(Array.isArray(j)) etkinlikler=j;
+  }catch(e){}
+  okulKarti(new Date());
+}
+function ayniGun(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
 
 const AY=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 const GUN=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
@@ -114,7 +126,9 @@ function okulKarti(d){
   const g=hedef.getDay();
   const etiket=(h>=14?"Yarın":"Bugün");
   let metin;
-  if(g===0||g===6) metin=etiket+" okul yok, iyi tatiller";
+  const gunun=etkinlikler.filter(e=>ayniGun(new Date(e.baslangic),hedef)).map(e=>e.baslik);
+  if(gunun.length) metin=etiket+": "+gunun.join(" · ");
+  else if(g===0||g===6) metin=etiket+" okul yok, iyi tatiller";
   else if(DERS[g]) metin=etiket+": "+DERS[g];
   else metin="Ders programı eklenecek";
   $("sc").innerHTML='<i class="ti ti-backpack" style="color:#5DCAA5"></i>'+metin;
@@ -152,8 +166,9 @@ function tick(){
   if(h===4&&m===0&&d.getSeconds()===0) location.reload();
 }
 
-tick(); okulKarti(new Date()); havaGetir();
+tick(); okulKarti(new Date()); havaGetir(); takvimGetir();
 setInterval(tick,1000);
+setInterval(takvimGetir,10*60*1000);
 setInterval(havaGetir,15*60*1000);
 </script>
 </body>
