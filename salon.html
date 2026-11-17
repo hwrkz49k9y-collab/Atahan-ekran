@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#000000">
 <title>Salon Saati</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@300&family=Teko:wght@400&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; background: #000; color: #f2f2f2; font-family: "Roboto", "Segoe UI", Arial, sans-serif; overflow: hidden; user-select: none; }
@@ -23,7 +23,8 @@
   .tekSatir { white-space: nowrap; }
 
   #saatEkrani { display: flex; align-items: center; justify-content: center; }
-  .saat { font-size: min(62vh, 40vw); line-height: 0.9; }
+  .saat { line-height: 0.9; }
+  .altin { color: #E0B04A; }
   .saniye { font-size: 14vh; color: #666; margin-left: 1.5vw; vertical-align: top; }
 
   #pano { padding: 3.5vh 4vw; }
@@ -34,7 +35,7 @@
 <div id="kap">
   <canvas id="fon"></canvas>
   <div class="sahne" id="saatEkrani">
-    <div class="bebas"><span class="saat" id="saat">--:--</span><span class="saniye" id="sn"></span></div>
+    <div id="saatKutu"><span class="saat" id="saat">--:--</span><span class="saniye" id="sn"></span></div>
   </div>
   <div class="sahne gizli" id="pano"></div>
   <div id="baglanti"></div>
@@ -81,11 +82,41 @@ function havaAd(kod) {
   return "Gök gürültülü";
 }
 
+
+/* ---------- Günlük font ve renk dönüşü ---------- */
+const FONTLAR = [
+  { ad: '"Bebas Neue"', boy: "min(62vh, 40vw)", ag: 400, ara: "0.4vw" },
+  { ad: '"Anton"', boy: "min(46vh, 29vw)", ag: 400, ara: "0.3vw" },
+  { ad: '"Oswald"', boy: "min(50vh, 31vw)", ag: 300, ara: "0.3vw" },
+  { ad: '"Teko"', boy: "min(66vh, 42vw)", ag: 400, ara: "0.2vw" }
+];
+const RENKLER = ["dakika", "saat", "nokta", "tamami"];
+let temaGunu = -1, aktifRenk = "dakika";
+function temaUygula(d) {
+  const gun = Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+  if (gun === temaGunu) return;
+  temaGunu = gun;
+  const f = FONTLAR[gun % FONTLAR.length];
+  aktifRenk = RENKLER[Math.floor(gun / FONTLAR.length) % RENKLER.length];
+  const k = $("saatKutu");
+  k.style.fontFamily = f.ad + ', "Bebas Neue", Arial, sans-serif';
+  k.style.fontWeight = f.ag; k.style.letterSpacing = f.ara;
+  $("saat").style.fontSize = f.boy;
+}
+function saatHtml(h, m) {
+  const a = '<span class="altin">', b = "</span>";
+  if (aktifRenk === "dakika") return h + ":" + a + m + b;
+  if (aktifRenk === "saat") return a + h + b + ":" + m;
+  if (aktifRenk === "nokta") return h + a + ":" + b + m;
+  return a + h + ":" + m + b;
+}
 /* ---------- Saat (tabletin kendi saatiyle çalışır, internet gerekmez) ---------- */
 function saatGuncelle() {
   const d = new Date(), h = d.getHours();
-  const hm = iki(h) + ":" + iki(d.getMinutes());
-  yaz("saat", hm); yaz("sn", iki(d.getSeconds())); yaz("pSaat", hm);
+  temaUygula(d);
+  const html = saatHtml(iki(h), iki(d.getMinutes()));
+  $("saat").innerHTML = html; yaz("sn", iki(d.getSeconds()));
+  const ps = $("pSaat"); if (ps) ps.innerHTML = html;
   yaz("pTarih", d.getDate() + " " + aylar[d.getMonth()] + " " + gunler[d.getDay()]);
   $("kap").classList.toggle("gece", h >= GECE_BAS || h < GECE_BIT);
   saatBasiKontrol(d);
@@ -194,7 +225,7 @@ const tasarim = {
   2: v => `
     <div style="display:flex;height:100%;gap:4vw">
       <div style="flex:1.15;display:flex;flex-direction:column;justify-content:space-between">
-        <div><div class="bebas" style="font-size:13vh;line-height:0.85" id="pSaat"></div><div class="gri" style="font-size:5vh" id="pTarih"></div></div>
+        <div><div class="bebas" style="font-size:13vh;line-height:0.85" id="pSaat"></div><div class="altin" style="font-size:5vh" id="pTarih"></div></div>
         <div style="display:flex;align-items:center;gap:2vw">
           <span style="font-size:22vh;line-height:1">${havaIkon(v.kod, v.gunduz)}</span>
           <span class="bebas" style="font-size:30vh;line-height:0.85">${v.der}°</span>
