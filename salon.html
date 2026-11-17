@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
 <title>Salon Saati</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,92 +11,279 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; background: #000; color: #f2f2f2; font-family: "Roboto", "Segoe UI", Arial, sans-serif; overflow: hidden; user-select: none; }
-  #ekran { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; transition: opacity 2s; }
-  .satir { position: absolute; left: 4vw; right: 4vw; transition: opacity 1.5s; }
-  .satir.ust { top: 3vh; }
-  .satir.alt { bottom: 3vh; }
-  .sade .satir { opacity: 0; }
-  .satir { display: flex; justify-content: space-between; align-items: flex-start; }
-  .kose { line-height: 1.1; }
-  .kose.sag { text-align: right; }
-  .buyuk { font-size: 10vh; color: #ffffff; white-space: nowrap; }
-  .kucuk { font-size: 5.5vh; color: #b8b8b8; white-space: nowrap; margin-top: 0.5vh; }
-  .alt .kucuk { margin-top: 0; margin-bottom: 0.5vh; }
-  .mavi { color: #7fc8f0; }
-  .saat { text-align: center; font-family: "Bebas Neue", "Roboto", Arial, sans-serif; font-size: 40vh; font-weight: 400; line-height: 0.9; letter-spacing: 1vw; transition: font-size 1.5s ease; }
-  .sade .saat { font-size: min(62vh, 40vw); }
-  .saniye { transition: font-size 1.5s ease; font-size: 11vh; color: #666; margin-left: 1.5vw; vertical-align: top; letter-spacing: 0.3vw; }
-  .sade .saniye { font-size: 14vh; }
+  #kap { position: relative; height: 100%; transition: opacity 2s; }
+  #fon { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; transition: opacity 1.2s; }
+  .sahne { position: absolute; inset: 0; z-index: 1; transition: opacity 1.2s ease; }
+  .gizli { opacity: 0; pointer-events: none; }
   .gece { opacity: 0.35; }
+  .bebas { font-family: "Bebas Neue", "Roboto", Arial, sans-serif; letter-spacing: 0.4vw; }
+
+  #saatEkrani { display: flex; align-items: center; justify-content: center; }
+  .saat { font-size: min(62vh, 40vw); line-height: 0.9; }
+  .saniye { font-size: 14vh; color: #666; margin-left: 1.5vw; vertical-align: top; }
+
+  #pano { padding: 3vh 3.5vw; display: flex; flex-direction: column; gap: 2vh; }
+  .ust { display: flex; justify-content: space-between; align-items: center; height: 22vh; }
+  .simdi { display: flex; align-items: center; gap: 2vw; }
+  .buyukIkon { font-size: 14vh; line-height: 1; }
+  .derece { font-size: 18vh; line-height: 0.9; }
+  .detay { white-space: nowrap; font-size: 4.2vh; color: #b8b8b8; line-height: 1.45; }
+  .detay b { color: #fff; font-weight: 400; }
+  .durum { white-space: nowrap; font-size: 5.2vh; color: #fff; }
+  .sagUst { text-align: right; }
+  .kucukSaat { font-size: 15vh; line-height: 0.9; }
+  .tarih { font-size: 4.8vh; color: #b8b8b8; }
+  .kutu { background: rgba(17, 20, 24, 0.72); border-radius: 2vh; }
+  #grafik { flex: 1; padding: 1.5vh 1vw 0.5vh; min-height: 0; }
+  #grafik svg { width: 100%; height: 100%; display: block; }
+  .gunler { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5vw; height: 23vh; }
+  .gun { display: flex; align-items: center; justify-content: space-between; padding: 0 1.8vw; }
+  .gunAd { font-size: 4.6vh; color: #b8b8b8; }
+  .gunIkon { font-size: 9vh; }
+  .gunDer { text-align: right; font-size: 5.2vh; line-height: 1.25; }
+  .gunDer span { color: #888; }
+  .yagis { color: #7fc8f0; font-size: 3.8vh; }
 </style>
 </head>
 <body>
-<div id="ekran" class="sade">
-  <div class="satir ust">
-    <div class="kose"><div class="buyuk" id="tarih">—</div><div class="kucuk" id="gun"></div></div>
-    <div class="kose sag"><div class="buyuk"><span id="ikon"></span> <span id="derece">--°</span></div><div class="kucuk">Kdz. Ereğli</div></div>
+<div id="kap">
+  <canvas id="fon"></canvas>
+  <div class="sahne" id="saatEkrani">
+    <div class="bebas"><span class="saat" id="saat">--:--</span><span class="saniye" id="sn"></span></div>
   </div>
-  <div class="saat"><span id="saat">--:--</span><span class="saniye" id="sn"></span></div>
-  <div class="satir alt">
-    <div class="kose"><div class="kucuk">Hissedilen <span id="his">--°</span></div><div class="buyuk">Nem <span class="mavi" id="nem">--%</span></div></div>
-    <div class="kose sag"><div class="kucuk">Yarın <span id="yikon"></span></div><div class="buyuk" id="yarin">--° / --°</div></div>
+
+  <div class="sahne gizli" id="pano">
+    <div class="ust">
+      <div class="simdi">
+        <div class="buyukIkon" id="pIkon">⛅</div>
+        <div class="derece bebas" id="pDerece">--°</div>
+        <div>
+          <div class="durum" id="pDurum">—</div>
+          <div class="detay">Hissedilen <b id="pHis">--°</b></div>
+          <div class="detay">Nem <b id="pNem">--%</b> · Rüzgâr <b id="pRuzgar">--</b></div>
+        </div>
+      </div>
+      <div class="sagUst">
+        <div class="kucukSaat bebas" id="pSaat">--:--</div>
+        <div class="tarih" id="pTarih">—</div>
+        <div class="detay">🌅 <b id="pDogus">--</b> &nbsp;🌇 <b id="pBatis">--</b></div>
+      </div>
+    </div>
+    <div class="kutu" id="grafik"></div>
+    <div class="gunler" id="gunler"></div>
   </div>
 </div>
 
 <script>
 const ENLEM = 41.28, BOYLAM = 31.42;
 const GECE_BAS = 23, GECE_BIT = 7;
+const PANO_ARALIK = 20, PANO_SURE = 60;
+const PANO_BAS = 8, PANO_BIT = 2;
+const SES_BAS = 8, SES_BIT = 1;
 
 const gunler = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+const kisaGun = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
 const aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 const iki = n => String(n).padStart(2, "0");
+const $ = id => document.getElementById(id);
 
-function saatGuncelle() {
-  const d = new Date();
-  document.getElementById("saat").textContent = iki(d.getHours()) + ":" + iki(d.getMinutes());
-  document.getElementById("sn").textContent = iki(d.getSeconds());
-  document.getElementById("tarih").textContent = d.getDate() + " " + aylar[d.getMonth()];
-  document.getElementById("gun").textContent = gunler[d.getDay()] + ", " + d.getFullYear();
-  const h = d.getHours();
-  document.getElementById("ekran").classList.toggle("gece", h >= GECE_BAS || h < GECE_BIT);
-  saatBasiKontrol(d);
-  bilgiKontrol(d);
-}
-
-function havaIkon(kod) {
-  if (kod === 0) return "☀️";
-  if (kod <= 2) return "🌤️";
+function havaIkon(kod, gunduz = true) {
+  if (kod === 0) return gunduz ? "☀️" : "🌙";
+  if (kod <= 2) return gunduz ? "🌤️" : "☁️";
   if (kod === 3) return "☁️";
   if (kod <= 48) return "🌫️";
+  if (kod <= 57) return "🌦️";
   if (kod <= 67 || (kod >= 80 && kod <= 82)) return "🌧️";
   if (kod <= 77 || kod === 85 || kod === 86) return "❄️";
   return "⛈️";
 }
+function havaAd(kod) {
+  if (kod === 0) return "Açık";
+  if (kod <= 2) return "Parçalı bulutlu";
+  if (kod === 3) return "Kapalı";
+  if (kod <= 48) return "Sisli";
+  if (kod <= 57) return "Çiseleme";
+  if (kod <= 65) return "Yağmurlu";
+  if (kod <= 67) return "Dondurucu yağmur";
+  if (kod <= 77) return "Karlı";
+  if (kod <= 82) return "Sağanak";
+  if (kod <= 86) return "Kar sağanağı";
+  return "Gök gürültülü";
+}
+
+function saatGuncelle() {
+  const d = new Date(), h = d.getHours();
+  const hm = iki(h) + ":" + iki(d.getMinutes());
+  $("saat").textContent = hm;
+  $("sn").textContent = iki(d.getSeconds());
+  $("pSaat").textContent = hm;
+  $("pTarih").textContent = d.getDate() + " " + aylar[d.getMonth()] + " " + gunler[d.getDay()];
+  $("kap").classList.toggle("gece", h >= GECE_BAS || h < GECE_BIT);
+  saatBasiKontrol(d);
+  panoKontrol(d);
+}
+
+let elleAcikBitis = 0;
+function panoKontrol(d) {
+  const h = d.getHours();
+  const saatUygun = h >= PANO_BAS || h < PANO_BIT;
+  const zamanli = saatUygun && d.getMinutes() % PANO_ARALIK === 0 && d.getSeconds() < PANO_SURE;
+  const goster = zamanli || Date.now() < elleAcikBitis;
+  $("pano").classList.toggle("gizli", !goster);
+  $("saatEkrani").classList.toggle("gizli", goster);
+}
+
+function grafikCiz(saatler, sicak, yagis, kodlar) {
+  const W = 1000, H = 300, solP = 30, sagP = 30, ustP = 95, altP = 55;
+  const n = sicak.length, adim = (W - solP - sagP) / (n - 1);
+  const mn = Math.min(...sicak) - 1, mx = Math.max(...sicak) + 1;
+  const y = t => ustP + (mx - t) / (mx - mn) * (H - ustP - altP);
+  const x = i => solP + i * adim;
+  let cizgi = "", alan = "";
+  sicak.forEach((t, i) => { cizgi += (i ? " L" : "M") + x(i).toFixed(1) + " " + y(t).toFixed(1); });
+  alan = cizgi + ` L${x(n - 1)} ${H - altP} L${x(0)} ${H - altP} Z`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0a040" stop-opacity="0.35"/><stop offset="1" stop-color="#f0a040" stop-opacity="0"/></linearGradient></defs>`;
+  yagis.forEach((p, i) => {
+    if (p > 0) { const bh = p / 100 * (H - ustP - altP); s += `<rect x="${x(i) - 14}" y="${H - altP - bh}" width="28" height="${bh}" rx="4" fill="#3a7fb8" opacity="0.45"/>`; }
+  });
+  s += `<path d="${alan}" fill="url(#g)"/><path d="${cizgi}" fill="none" stroke="#f0a040" stroke-width="4" stroke-linejoin="round"/>`;
+  sicak.forEach((t, i) => {
+    s += `<circle cx="${x(i)}" cy="${y(t)}" r="6" fill="#f0a040"/>`;
+    s += `<text x="${x(i)}" y="${y(t) - 16}" fill="#fff" font-size="26" text-anchor="middle">${Math.round(t)}°</text>`;
+    s += `<text x="${x(i)}" y="34" font-size="30" text-anchor="middle">${havaIkon(kodlar[i], saatler[i] >= 7 && saatler[i] < 18)}</text>`;
+    s += `<text x="${x(i)}" y="${H - 18}" fill="#999" font-size="24" text-anchor="middle">${i === 0 ? "Şimdi" : iki(saatler[i])}</text>`;
+    if (yagis[i] >= 20) s += `<text x="${x(i)}" y="${H - altP - 8}" fill="#7fc8f0" font-size="20" text-anchor="middle">%${yagis[i]}</text>`;
+  });
+  s += "</svg>";
+  $("grafik").innerHTML = s;
+}
 
 async function havaGetir() {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ENLEM}&longitude=${BOYLAM}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FIstanbul&forecast_days=2`;
-    const r = await fetch(url); const j = await r.json();
-    document.getElementById("derece").textContent = Math.round(j.current.temperature_2m) + "°C";
-    document.getElementById("ikon").textContent = havaIkon(j.current.weather_code);
-    document.getElementById("nem").textContent = "%" + Math.round(j.current.relative_humidity_2m);
-    document.getElementById("his").textContent = Math.round(j.current.apparent_temperature) + "°";
-    document.getElementById("yikon").textContent = havaIkon(j.daily.weather_code[1]);
-    document.getElementById("yarin").textContent = Math.round(j.daily.temperature_2m_min[1]) + "° / " + Math.round(j.daily.temperature_2m_max[1]) + "°";
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ENLEM}&longitude=${BOYLAM}`
+      + `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day`
+      + `&hourly=temperature_2m,precipitation_probability,weather_code`
+      + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset`
+      + `&timezone=Europe%2FIstanbul&forecast_days=5&wind_speed_unit=kmh`;
+    const j = await (await fetch(url)).json();
+    const c = j.current;
+    havaModu = { kod: c.weather_code, gunduz: c.is_day === 1 };
+    $("pIkon").textContent = havaIkon(c.weather_code, c.is_day === 1);
+    $("pDerece").textContent = Math.round(c.temperature_2m) + "°";
+    $("pDurum").textContent = havaAd(c.weather_code);
+    $("pHis").textContent = Math.round(c.apparent_temperature) + "°";
+    $("pNem").textContent = "%" + Math.round(c.relative_humidity_2m);
+    $("pRuzgar").textContent = Math.round(c.wind_speed_10m) + " km/s";
+    $("pDogus").textContent = j.daily.sunrise[0].slice(11, 16);
+    $("pBatis").textContent = j.daily.sunset[0].slice(11, 16);
+
+    const simdi = new Date();
+    const anahtar = simdi.getFullYear() + "-" + iki(simdi.getMonth() + 1) + "-" + iki(simdi.getDate()) + "T" + iki(simdi.getHours()) + ":00";
+    let bas = j.hourly.time.indexOf(anahtar); if (bas < 0) bas = 0;
+    const son = bas + 13;
+    grafikCiz(
+      j.hourly.time.slice(bas, son).map(t => +t.slice(11, 13)),
+      j.hourly.temperature_2m.slice(bas, son),
+      j.hourly.precipitation_probability.slice(bas, son).map(v => v || 0),
+      j.hourly.weather_code.slice(bas, son)
+    );
+
+    let g = "";
+    for (let i = 1; i <= 4; i++) {
+      const dt = new Date(j.daily.time[i] + "T12:00");
+      const ad = i === 1 ? "Yarın" : kisaGun[dt.getDay()];
+      const p = j.daily.precipitation_probability_max[i] || 0;
+      g += `<div class="kutu gun"><div><div class="gunAd">${ad}</div><div class="yagis">💧 %${p}</div></div>
+        <div class="gunIkon">${havaIkon(j.daily.weather_code[i])}</div>
+        <div class="gunDer">${Math.round(j.daily.temperature_2m_max[i])}°<br><span>${Math.round(j.daily.temperature_2m_min[i])}°</span></div></div>`;
+    }
+    $("gunler").innerHTML = g;
   } catch (e) {}
 }
 
-
-const BILGI_ARALIK = 20, BILGI_SURE = 60;
-let elleAcikBitis = 0;
-function bilgiKontrol(d) {
-  const dk = d.getMinutes(), sn = d.getSeconds();
-  const zamanli = (dk % BILGI_ARALIK === 0) && (sn < BILGI_SURE);
-  const goster = zamanli || Date.now() < elleAcikBitis;
-  document.getElementById("ekran").classList.toggle("sade", !goster);
+const ANIM_SAAT_GUCU = 0.55;
+let havaModu = { kod: 3, gunduz: true };
+const fon = $("fon"), cx = fon.getContext("2d");
+let FW = 0, FH = 0, parcalar = [], bulutlar = [], yildizlar = [], simsek = 0, sonKare = 0, aktifTur = "";
+function boyutla() { FW = fon.width = Math.round(innerWidth * 0.75); FH = fon.height = Math.round(innerHeight * 0.75); aktifTur = ""; }
+addEventListener("resize", boyutla); boyutla();
+const r = (a, b) => a + Math.random() * (b - a);
+function tur() {
+  const k = havaModu.kod;
+  if (k >= 95) return "firtina";
+  if ((k >= 51 && k <= 67) || (k >= 80 && k <= 82)) return "yagmur";
+  if ((k >= 71 && k <= 77) || k === 85 || k === 86) return "kar";
+  if (k === 45 || k === 48) return "sis";
+  if (k === 3) return "kapali";
+  if (k === 2) return havaModu.gunduz ? "parcali" : "geceBulut";
+  return havaModu.gunduz ? "gunes" : "yildiz";
 }
+function kur(t) {
+  parcalar = []; bulutlar = []; yildizlar = [];
+  const bulutSay = { yagmur: 4, firtina: 5, kar: 3, kapali: 6, parcali: 3, geceBulut: 3, sis: 0 }[t] || 0;
+  for (let i = 0; i < bulutSay; i++) bulutlar.push({ x: r(-0.2, 1) * FW, y: r(0.02, 0.35) * FH, s: r(0.7, 1.4) * FH * 0.16, v: r(0.08, 0.25), a: t === "kapali" || t === "firtina" ? 0.16 : 0.12 });
+  if (t === "yagmur" || t === "firtina") for (let i = 0; i < (t === "firtina" ? 90 : 65); i++) parcalar.push({ x: r(0, FW), y: r(0, FH), u: r(10, 18), v: r(7, 11) });
+  if (t === "kar") for (let i = 0; i < 55; i++) parcalar.push({ x: r(0, FW), y: r(0, FH), r: r(1.2, 3.2), v: r(0.4, 1.1), f: r(0, 6.28) });
+  if (t === "yildiz" || t === "geceBulut") for (let i = 0; i < 45; i++) yildizlar.push({ x: r(0, FW), y: r(0, FH * 0.7), r: r(0.6, 1.6), f: r(0, 6.28), h: r(0.01, 0.03) });
+  if (t === "sis") for (let i = 0; i < 5; i++) bulutlar.push({ x: r(0, FW), y: (0.15 + i * 0.17) * FH, s: FW * r(0.5, 0.8), v: r(0.1, 0.3) * (i % 2 ? -1 : 1), a: 0.07 });
+}
+function bulutCiz(b) {
+  cx.fillStyle = `rgba(200,210,225,${b.a})`;
+  cx.beginPath();
+  [[0, 0, 1], [0.8, 0.15, 0.75], [-0.8, 0.2, 0.7], [0.3, -0.35, 0.8], [-0.35, -0.25, 0.65]].forEach(([dx, dy, k]) => { cx.moveTo(b.x + dx * b.s + k * b.s, b.y + dy * b.s); cx.arc(b.x + dx * b.s, b.y + dy * b.s, k * b.s, 0, 6.28); });
+  cx.fill();
+}
+function kare(zaman) {
+  requestAnimationFrame(kare);
+  if (zaman - sonKare < 40) return;
+  sonKare = zaman;
+  const t = tur();
+  if (t !== aktifTur) { aktifTur = t; kur(t); }
+  cx.clearRect(0, 0, FW, FH);
+  const panoAcik = !$("pano").classList.contains("gizli");
+  fon.style.opacity = panoAcik ? 1 : ANIM_SAAT_GUCU;
+  const sn = zaman / 1000;
 
-const SES_BAS = 8, SES_BIT = 1;
+  if (t === "gunes" || t === "parcali") {
+    const gx = FW * 0.85, gy = FH * 0.12, nefes = 1 + Math.sin(sn * 0.8) * 0.06;
+    const g = cx.createRadialGradient(gx, gy, 0, gx, gy, FH * 0.75 * nefes);
+    g.addColorStop(0, "rgba(255,190,80,0.30)"); g.addColorStop(0.35, "rgba(255,160,60,0.10)"); g.addColorStop(1, "rgba(255,150,50,0)");
+    cx.fillStyle = g; cx.fillRect(0, 0, FW, FH);
+    cx.save(); cx.translate(gx, gy); cx.rotate(sn * 0.05);
+    cx.fillStyle = "rgba(255,200,110,0.05)";
+    for (let i = 0; i < 12; i++) { cx.rotate(Math.PI / 6); cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(FW, -FH * 0.08); cx.lineTo(FW, FH * 0.08); cx.fill(); }
+    cx.restore();
+  }
+  yildizlar.forEach(y => { y.f += y.h * 4; cx.fillStyle = `rgba(255,255,255,${0.25 + 0.5 * (0.5 + 0.5 * Math.sin(y.f))})`; cx.beginPath(); cx.arc(y.x, y.y, y.r, 0, 6.28); cx.fill(); });
+  if (t === "yildiz") { cx.fillStyle = "rgba(230,235,255,0.10)"; cx.beginPath(); cx.arc(FW * 0.85, FH * 0.15, FH * 0.09, 0, 6.28); cx.fill(); }
+
+  bulutlar.forEach(b => {
+    b.x += b.v;
+    if (t === "sis") {
+      if (b.x > FW * 1.3) b.x = -FW * 0.3; if (b.x < -FW * 0.3) b.x = FW * 1.3;
+      const g = cx.createLinearGradient(0, b.y - FH * 0.08, 0, b.y + FH * 0.08);
+      g.addColorStop(0, "rgba(190,195,205,0)"); g.addColorStop(0.5, `rgba(190,195,205,${b.a})`); g.addColorStop(1, "rgba(190,195,205,0)");
+      cx.fillStyle = g; cx.fillRect(b.x - b.s, b.y - FH * 0.08, b.s * 2, FH * 0.16);
+    } else { if (b.x - b.s * 2 > FW) b.x = -b.s * 2; bulutCiz(b); }
+  });
+
+  if (t === "yagmur" || t === "firtina") {
+    cx.strokeStyle = "rgba(140,185,235,0.45)"; cx.lineWidth = 1.4; cx.beginPath();
+    parcalar.forEach(p => { p.y += p.v; p.x -= p.v * 0.18; if (p.y > FH) { p.y = -p.u; p.x = r(0, FW * 1.1); } cx.moveTo(p.x, p.y); cx.lineTo(p.x - p.u * 0.18, p.y + p.u); });
+    cx.stroke();
+  }
+  if (t === "kar") {
+    cx.fillStyle = "rgba(255,255,255,0.75)";
+    parcalar.forEach(p => { p.f += 0.03; p.y += p.v; p.x += Math.sin(p.f) * 0.5; if (p.y > FH) { p.y = -5; p.x = r(0, FW); } cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.28); cx.fill(); });
+  }
+  if (t === "firtina") {
+    if (simsek <= 0 && Math.random() < 0.004) simsek = 1;
+    if (simsek > 0) { cx.fillStyle = `rgba(220,230,255,${simsek * 0.35})`; cx.fillRect(0, 0, FW, FH); simsek -= 0.08; }
+  }
+}
+requestAnimationFrame(kare);
+
 let ses = null, sonCalinan = -1;
 function sesHazirla() {
   try { if (!ses) ses = new (window.AudioContext || window.webkitAudioContext)(); if (ses.state === "suspended") ses.resume(); } catch (e) {}
@@ -115,36 +301,28 @@ function nota(frekans, baslangic, sure) {
     o.start(t); o.stop(t + sure);
   });
 }
-function dingDong() {
-  sesHazirla(); if (!ses) return;
-  nota(659.25, 0, 2.2);
-  nota(523.25, 0.7, 2.8);
-}
+function dingDong() { sesHazirla(); if (!ses) return; nota(659.25, 0, 2.2); nota(523.25, 0.7, 2.8); }
 function saatBasiKontrol(d) {
   const h = d.getHours();
-  if (d.getMinutes() === 0 && d.getSeconds() < 5 && sonCalinan !== h && (h >= SES_BAS || h <= SES_BIT)) {
-    sonCalinan = h; dingDong();
-  }
+  if (d.getMinutes() === 0 && d.getSeconds() < 5 && sonCalinan !== h && (h >= SES_BAS || h <= SES_BIT)) { sonCalinan = h; dingDong(); }
 }
 
 let kilit = null;
-async function uyanikTut() {
-  try { if ("wakeLock" in navigator) kilit = await navigator.wakeLock.request("screen"); } catch (e) {}
-}
+async function uyanikTut() { try { if ("wakeLock" in navigator) kilit = await navigator.wakeLock.request("screen"); } catch (e) {} }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") uyanikTut(); });
 
 document.body.addEventListener("click", () => {
   const el = document.documentElement;
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
-  uyanikTut();
-  sesHazirla();
-  elleAcikBitis = Date.now() + BILGI_SURE * 1000;
-  bilgiKontrol(new Date());
+  uyanikTut(); sesHazirla();
+  const panoAcik = !$("pano").classList.contains("gizli");
+  elleAcikBitis = panoAcik ? 0 : Date.now() + PANO_SURE * 1000;
+  panoKontrol(new Date());
 });
 
 saatGuncelle(); havaGetir(); uyanikTut();
 setInterval(saatGuncelle, 1000);
-setInterval(havaGetir, 15 * 60 * 1000);
+setInterval(havaGetir, 10 * 60 * 1000);
 setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
 </script>
 </body>
