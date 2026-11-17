@@ -12,7 +12,11 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; background: #000; color: #f2f2f2; font-family: "Roboto", "Segoe UI", Arial, sans-serif; overflow: hidden; user-select: none; }
-  #ekran { height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 3vh 4vw; transition: opacity 2s; }
+  #ekran { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; transition: opacity 2s; }
+  .satir { position: absolute; left: 4vw; right: 4vw; transition: opacity 1.5s; }
+  .satir.ust { top: 3vh; }
+  .satir.alt { bottom: 3vh; }
+  .sade .satir { opacity: 0; }
   .satir { display: flex; justify-content: space-between; align-items: flex-start; }
   .kose { line-height: 1.1; }
   .kose.sag { text-align: right; }
@@ -20,14 +24,16 @@
   .kucuk { font-size: 5.5vh; color: #b8b8b8; white-space: nowrap; margin-top: 0.5vh; }
   .alt .kucuk { margin-top: 0; margin-bottom: 0.5vh; }
   .mavi { color: #7fc8f0; }
-  .saat { text-align: center; font-family: "Bebas Neue", "Roboto", Arial, sans-serif; font-size: 40vh; font-weight: 400; line-height: 0.9; letter-spacing: 1vw; }
-  .saniye { font-size: 11vh; color: #666; margin-left: 1.5vw; vertical-align: top; letter-spacing: 0.3vw; }
+  .saat { text-align: center; font-family: "Bebas Neue", "Roboto", Arial, sans-serif; font-size: 40vh; font-weight: 400; line-height: 0.9; letter-spacing: 1vw; transition: font-size 1.5s ease; }
+  .sade .saat { font-size: min(62vh, 40vw); }
+  .saniye { transition: font-size 1.5s ease; font-size: 11vh; color: #666; margin-left: 1.5vw; vertical-align: top; letter-spacing: 0.3vw; }
+  .sade .saniye { font-size: 14vh; }
   .gece { opacity: 0.35; }
 </style>
 </head>
 <body>
-<div id="ekran">
-  <div class="satir">
+<div id="ekran" class="sade">
+  <div class="satir ust">
     <div class="kose"><div class="buyuk" id="tarih">—</div><div class="kucuk" id="gun"></div></div>
     <div class="kose sag"><div class="buyuk"><span id="ikon"></span> <span id="derece">--°</span></div><div class="kucuk">Kdz. Ereğli</div></div>
   </div>
@@ -55,6 +61,7 @@ function saatGuncelle() {
   const h = d.getHours();
   document.getElementById("ekran").classList.toggle("gece", h >= GECE_BAS || h < GECE_BIT);
   saatBasiKontrol(d);
+  bilgiKontrol(d);
 }
 
 function havaIkon(kod) {
@@ -80,6 +87,15 @@ async function havaGetir() {
   } catch (e) {}
 }
 
+
+const BILGI_ARALIK = 20, BILGI_SURE = 60;
+let elleAcikBitis = 0;
+function bilgiKontrol(d) {
+  const dk = d.getMinutes(), sn = d.getSeconds();
+  const zamanli = (dk % BILGI_ARALIK === 0) && (sn < BILGI_SURE);
+  const goster = zamanli || Date.now() < elleAcikBitis;
+  document.getElementById("ekran").classList.toggle("sade", !goster);
+}
 
 const SES_BAS = 8, SES_BIT = 1;
 let ses = null, sonCalinan = -1;
@@ -122,6 +138,8 @@ document.body.addEventListener("click", () => {
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
   uyanikTut();
   sesHazirla();
+  elleAcikBitis = Date.now() + BILGI_SURE * 1000;
+  bilgiKontrol(new Date());
 });
 
 saatGuncelle(); havaGetir(); uyanikTut();
