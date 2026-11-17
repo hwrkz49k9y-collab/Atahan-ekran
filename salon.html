@@ -7,33 +7,36 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
 <title>Salon Saati</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; background: #000; color: #f2f2f2; font-family: "Roboto", "Segoe UI", Arial, sans-serif; overflow: hidden; user-select: none; }
-  #ekran { height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 4vh 5vw; transition: opacity 2s; }
-  .ust, .alt { display: flex; justify-content: space-between; align-items: center; font-size: 4.2vh; color: #a8a8a8; }
-  .saat { text-align: center; font-size: 34vh; font-weight: 300; line-height: 1; letter-spacing: 0.5vw; font-variant-numeric: tabular-nums; }
-  .saniye { font-size: 9vh; color: #666; margin-left: 1vw; vertical-align: top; }
-  .hava { display: flex; align-items: center; gap: 1.5vw; }
-  .hava b { color: #f2f2f2; font-weight: 400; }
-  .vakit b { color: #7fc8f0; font-weight: 400; }
+  #ekran { height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 3vh 4vw; transition: opacity 2s; }
+  .satir { display: flex; justify-content: space-between; align-items: flex-start; }
+  .kose { line-height: 1.1; }
+  .kose.sag { text-align: right; }
+  .buyuk { font-size: 10vh; color: #ffffff; white-space: nowrap; }
+  .kucuk { font-size: 5.5vh; color: #b8b8b8; white-space: nowrap; margin-top: 0.5vh; }
+  .alt .kucuk { margin-top: 0; margin-bottom: 0.5vh; }
+  .mavi { color: #7fc8f0; }
+  .saat { text-align: center; font-family: "Bebas Neue", "Roboto", Arial, sans-serif; font-size: 40vh; font-weight: 400; line-height: 0.9; letter-spacing: 1vw; }
+  .saniye { font-size: 11vh; color: #666; margin-left: 1.5vw; vertical-align: top; letter-spacing: 0.3vw; }
   .gece { opacity: 0.35; }
-  #ipucu { position: fixed; bottom: 1vh; left: 0; right: 0; text-align: center; font-size: 2.6vh; color: #555; }
 </style>
 </head>
 <body>
 <div id="ekran">
-  <div class="ust">
-    <span id="tarih">—</span>
-    <span class="hava"><span id="ikon"></span><b id="derece">--°</b><span>Kdz. Ereğli</span></span>
+  <div class="satir">
+    <div class="kose"><div class="buyuk" id="tarih">—</div><div class="kucuk" id="gun"></div></div>
+    <div class="kose sag"><div class="buyuk"><span id="ikon"></span> <span id="derece">--°</span></div><div class="kucuk">Kdz. Ereğli</div></div>
   </div>
   <div class="saat"><span id="saat">--:--</span><span class="saniye" id="sn"></span></div>
-  <div class="alt">
-    <span class="vakit" id="nem">Nem --%</span>
-    <span id="yarin"></span>
+  <div class="satir alt">
+    <div class="kose"><div class="kucuk">Hissedilen <span id="his">--°</span></div><div class="buyuk">Nem <span class="mavi" id="nem">--%</span></div></div>
+    <div class="kose sag"><div class="kucuk">Yarın <span id="yikon"></span></div><div class="buyuk" id="yarin">--° / --°</div></div>
   </div>
 </div>
-<div id="ipucu">Tam ekran için dokun</div>
 
 <script>
 const ENLEM = 41.28, BOYLAM = 31.42;
@@ -47,9 +50,11 @@ function saatGuncelle() {
   const d = new Date();
   document.getElementById("saat").textContent = iki(d.getHours()) + ":" + iki(d.getMinutes());
   document.getElementById("sn").textContent = iki(d.getSeconds());
-  document.getElementById("tarih").textContent = d.getDate() + " " + aylar[d.getMonth()] + " " + d.getFullYear() + ", " + gunler[d.getDay()];
+  document.getElementById("tarih").textContent = d.getDate() + " " + aylar[d.getMonth()];
+  document.getElementById("gun").textContent = gunler[d.getDay()] + ", " + d.getFullYear();
   const h = d.getHours();
   document.getElementById("ekran").classList.toggle("gece", h >= GECE_BAS || h < GECE_BIT);
+  saatBasiKontrol(d);
 }
 
 function havaIkon(kod) {
@@ -68,9 +73,42 @@ async function havaGetir() {
     const r = await fetch(url); const j = await r.json();
     document.getElementById("derece").textContent = Math.round(j.current.temperature_2m) + "°C";
     document.getElementById("ikon").textContent = havaIkon(j.current.weather_code);
-    document.getElementById("nem").innerHTML = "Nem <b>%" + Math.round(j.current.relative_humidity_2m) + "</b> · Hissedilen <b>" + Math.round(j.current.apparent_temperature) + "°</b>";
-    document.getElementById("yarin").textContent = "Yarın " + havaIkon(j.daily.weather_code[1]) + " " + Math.round(j.daily.temperature_2m_min[1]) + "° / " + Math.round(j.daily.temperature_2m_max[1]) + "°";
+    document.getElementById("nem").textContent = "%" + Math.round(j.current.relative_humidity_2m);
+    document.getElementById("his").textContent = Math.round(j.current.apparent_temperature) + "°";
+    document.getElementById("yikon").textContent = havaIkon(j.daily.weather_code[1]);
+    document.getElementById("yarin").textContent = Math.round(j.daily.temperature_2m_min[1]) + "° / " + Math.round(j.daily.temperature_2m_max[1]) + "°";
   } catch (e) {}
+}
+
+
+const SES_BAS = 8, SES_BIT = 1;
+let ses = null, sonCalinan = -1;
+function sesHazirla() {
+  try { if (!ses) ses = new (window.AudioContext || window.webkitAudioContext)(); if (ses.state === "suspended") ses.resume(); } catch (e) {}
+}
+function nota(frekans, baslangic, sure) {
+  const t = ses.currentTime + baslangic;
+  [1, 2.01, 3.02].forEach((kat, i) => {
+    const o = ses.createOscillator(), g = ses.createGain();
+    o.type = "sine"; o.frequency.value = frekans * kat;
+    const v = [0.5, 0.15, 0.06][i];
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(v, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
+    o.connect(g).connect(ses.destination);
+    o.start(t); o.stop(t + sure);
+  });
+}
+function dingDong() {
+  sesHazirla(); if (!ses) return;
+  nota(659.25, 0, 2.2);
+  nota(523.25, 0.7, 2.8);
+}
+function saatBasiKontrol(d) {
+  const h = d.getHours();
+  if (d.getMinutes() === 0 && d.getSeconds() < 5 && sonCalinan !== h && (h >= SES_BAS || h <= SES_BIT)) {
+    sonCalinan = h; dingDong();
+  }
 }
 
 let kilit = null;
@@ -82,8 +120,8 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 document.body.addEventListener("click", () => {
   const el = document.documentElement;
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
-  document.getElementById("ipucu").style.display = "none";
   uyanikTut();
+  sesHazirla();
 });
 
 saatGuncelle(); havaGetir(); uyanikTut();
