@@ -17,32 +17,17 @@
   .gizli { opacity: 0; pointer-events: none; }
   .gece { opacity: 0.35; }
   .bebas { font-family: "Bebas Neue", "Roboto", Arial, sans-serif; letter-spacing: 0.4vw; }
+  .gri { color: #b8b8b8; }
+  .mavi { color: #7fc8f0; }
+  .kutu { background: rgba(17, 20, 24, 0.72); border-radius: 2vh; }
+  .tekSatir { white-space: nowrap; }
 
   #saatEkrani { display: flex; align-items: center; justify-content: center; }
   .saat { font-size: min(62vh, 40vw); line-height: 0.9; }
   .saniye { font-size: 14vh; color: #666; margin-left: 1.5vw; vertical-align: top; }
 
-  #pano { padding: 3vh 3.5vw; display: flex; flex-direction: column; gap: 2vh; }
-  .ust { display: flex; justify-content: space-between; align-items: center; height: 22vh; }
-  .simdi { display: flex; align-items: center; gap: 2vw; }
-  .buyukIkon { font-size: 14vh; line-height: 1; }
-  .derece { font-size: 18vh; line-height: 0.9; }
-  .detay { white-space: nowrap; font-size: 4.2vh; color: #b8b8b8; line-height: 1.45; }
-  .detay b { color: #fff; font-weight: 400; }
-  .durum { white-space: nowrap; font-size: 5.2vh; color: #fff; }
-  .sagUst { text-align: right; }
-  .kucukSaat { font-size: 15vh; line-height: 0.9; }
-  .tarih { font-size: 4.8vh; color: #b8b8b8; }
-  .kutu { background: rgba(17, 20, 24, 0.72); border-radius: 2vh; }
-  #grafik { flex: 1; padding: 1.5vh 1vw 0.5vh; min-height: 0; }
-  #grafik svg { width: 100%; height: 100%; display: block; }
-  .gunler { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5vw; height: 23vh; }
-  .gun { display: flex; align-items: center; justify-content: space-between; padding: 0 1.8vw; }
-  .gunAd { font-size: 4.6vh; color: #b8b8b8; }
-  .gunIkon { font-size: 9vh; }
-  .gunDer { text-align: right; font-size: 5.2vh; line-height: 1.25; }
-  .gunDer span { color: #888; }
-  .yagis { color: #7fc8f0; font-size: 3.8vh; }
+  #pano { padding: 3.5vh 4vw; }
+  #baglanti { position: absolute; right: 2vw; bottom: 1.5vh; font-size: 3vh; color: #777; z-index: 2; }
 </style>
 </head>
 <body>
@@ -51,41 +36,26 @@
   <div class="sahne" id="saatEkrani">
     <div class="bebas"><span class="saat" id="saat">--:--</span><span class="saniye" id="sn"></span></div>
   </div>
-
-  <div class="sahne gizli" id="pano">
-    <div class="ust">
-      <div class="simdi">
-        <div class="buyukIkon" id="pIkon">⛅</div>
-        <div class="derece bebas" id="pDerece">--°</div>
-        <div>
-          <div class="durum" id="pDurum">—</div>
-          <div class="detay">Hissedilen <b id="pHis">--°</b></div>
-          <div class="detay">Nem <b id="pNem">--%</b> · Rüzgâr <b id="pRuzgar">--</b></div>
-        </div>
-      </div>
-      <div class="sagUst">
-        <div class="kucukSaat bebas" id="pSaat">--:--</div>
-        <div class="tarih" id="pTarih">—</div>
-        <div class="detay">🌅 <b id="pDogus">--</b> &nbsp;🌇 <b id="pBatis">--</b></div>
-      </div>
-    </div>
-    <div class="kutu" id="grafik"></div>
-    <div class="gunler" id="gunler"></div>
-  </div>
+  <div class="sahne gizli" id="pano"></div>
+  <div id="baglanti"></div>
 </div>
 
 <script>
+const PANO_TIP = 2;
 const ENLEM = 41.28, BOYLAM = 31.42;
 const GECE_BAS = 23, GECE_BIT = 7;
 const PANO_ARALIK = 20, PANO_SURE = 60;
 const PANO_BAS = 8, PANO_BIT = 2;
 const SES_BAS = 8, SES_BIT = 1;
+const ANIM_SAAT_GUCU = 0.7;
 
 const gunler = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
 const kisaGun = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
 const aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 const iki = n => String(n).padStart(2, "0");
 const $ = id => document.getElementById(id);
+const yaz = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+const yuv = Math.round;
 
 function havaIkon(kod, gunduz = true) {
   if (kod === 0) return gunduz ? "☀️" : "🌙";
@@ -111,16 +81,16 @@ function havaAd(kod) {
   return "Gök gürültülü";
 }
 
+/* ---------- Saat (tabletin kendi saatiyle çalışır, internet gerekmez) ---------- */
 function saatGuncelle() {
   const d = new Date(), h = d.getHours();
   const hm = iki(h) + ":" + iki(d.getMinutes());
-  $("saat").textContent = hm;
-  $("sn").textContent = iki(d.getSeconds());
-  $("pSaat").textContent = hm;
-  $("pTarih").textContent = d.getDate() + " " + aylar[d.getMonth()] + " " + gunler[d.getDay()];
+  yaz("saat", hm); yaz("sn", iki(d.getSeconds())); yaz("pSaat", hm);
+  yaz("pTarih", d.getDate() + " " + aylar[d.getMonth()] + " " + gunler[d.getDay()]);
   $("kap").classList.toggle("gece", h >= GECE_BAS || h < GECE_BIT);
   saatBasiKontrol(d);
   panoKontrol(d);
+  baglantiGoster();
 }
 
 let elleAcikBitis = 0;
@@ -128,35 +98,33 @@ function panoKontrol(d) {
   const h = d.getHours();
   const saatUygun = h >= PANO_BAS || h < PANO_BIT;
   const zamanli = saatUygun && d.getMinutes() % PANO_ARALIK === 0 && d.getSeconds() < PANO_SURE;
-  const goster = zamanli || Date.now() < elleAcikBitis;
+  const goster = sonVeri && (zamanli || Date.now() < elleAcikBitis);
   $("pano").classList.toggle("gizli", !goster);
-  $("saatEkrani").classList.toggle("gizli", goster);
+  $("saatEkrani").classList.toggle("gizli", !!goster);
 }
 
-function grafikCiz(saatler, sicak, yagis, kodlar) {
-  const W = 1000, H = 300, solP = 30, sagP = 30, ustP = 95, altP = 55;
-  const n = sicak.length, adim = (W - solP - sagP) / (n - 1);
-  const mn = Math.min(...sicak) - 1, mx = Math.max(...sicak) + 1;
-  const y = t => ustP + (mx - t) / (mx - mn) * (H - ustP - altP);
-  const x = i => solP + i * adim;
-  let cizgi = "", alan = "";
-  sicak.forEach((t, i) => { cizgi += (i ? " L" : "M") + x(i).toFixed(1) + " " + y(t).toFixed(1); });
-  alan = cizgi + ` L${x(n - 1)} ${H - altP} L${x(0)} ${H - altP} Z`;
-  let s = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0a040" stop-opacity="0.35"/><stop offset="1" stop-color="#f0a040" stop-opacity="0"/></linearGradient></defs>`;
-  yagis.forEach((p, i) => {
-    if (p > 0) { const bh = p / 100 * (H - ustP - altP); s += `<rect x="${x(i) - 14}" y="${H - altP - bh}" width="28" height="${bh}" rx="4" fill="#3a7fb8" opacity="0.45"/>`; }
-  });
-  s += `<path d="${alan}" fill="url(#g)"/><path d="${cizgi}" fill="none" stroke="#f0a040" stroke-width="4" stroke-linejoin="round"/>`;
-  sicak.forEach((t, i) => {
-    s += `<circle cx="${x(i)}" cy="${y(t)}" r="6" fill="#f0a040"/>`;
-    s += `<text x="${x(i)}" y="${y(t) - 16}" fill="#fff" font-size="26" text-anchor="middle">${Math.round(t)}°</text>`;
-    s += `<text x="${x(i)}" y="34" font-size="30" text-anchor="middle">${havaIkon(kodlar[i], saatler[i] >= 7 && saatler[i] < 18)}</text>`;
-    s += `<text x="${x(i)}" y="${H - 18}" fill="#999" font-size="24" text-anchor="middle">${i === 0 ? "Şimdi" : iki(saatler[i])}</text>`;
-    if (yagis[i] >= 20) s += `<text x="${x(i)}" y="${H - altP - 8}" fill="#7fc8f0" font-size="20" text-anchor="middle">%${yagis[i]}</text>`;
-  });
-  s += "</svg>";
-  $("grafik").innerHTML = s;
+/* ---------- Hava verisi ---------- */
+let sonVeri = null, sonBasari = 0;
+function veriOzet(j) {
+  const c = j.current, simdi = new Date();
+  const anahtar = simdi.getFullYear() + "-" + iki(simdi.getMonth() + 1) + "-" + iki(simdi.getDate()) + "T" + iki(simdi.getHours()) + ":00";
+  let bas = j.hourly.time.indexOf(anahtar); if (bas < 0) bas = 0;
+  const son = bas + 13;
+  const gunlerListe = [];
+  for (let i = 1; i <= 4; i++) {
+    const dt = new Date(j.daily.time[i] + "T12:00");
+    gunlerListe.push({ ad: i === 1 ? "Yarın" : kisaGun[dt.getDay()], kod: j.daily.weather_code[i], mx: yuv(j.daily.temperature_2m_max[i]), mn: yuv(j.daily.temperature_2m_min[i]), p: j.daily.precipitation_probability_max[i] || 0 });
+  }
+  return {
+    kod: c.weather_code, gunduz: c.is_day === 1, der: yuv(c.temperature_2m), his: yuv(c.apparent_temperature),
+    nem: yuv(c.relative_humidity_2m), ruz: yuv(c.wind_speed_10m),
+    dogus: j.daily.sunrise[0].slice(11, 16), batis: j.daily.sunset[0].slice(11, 16),
+    sa: j.hourly.time.slice(bas, son).map(t => +t.slice(11, 13)),
+    sic: j.hourly.temperature_2m.slice(bas, son),
+    yag: j.hourly.precipitation_probability.slice(bas, son).map(v => v || 0),
+    skod: j.hourly.weather_code.slice(bas, son),
+    gun: gunlerListe
+  };
 }
 
 async function havaGetir() {
@@ -166,47 +134,128 @@ async function havaGetir() {
       + `&hourly=temperature_2m,precipitation_probability,weather_code`
       + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset`
       + `&timezone=Europe%2FIstanbul&forecast_days=5&wind_speed_unit=kmh`;
-    const j = await (await fetch(url)).json();
-    const c = j.current;
-    havaModu = { kod: c.weather_code, gunduz: c.is_day === 1 };
-    $("pIkon").textContent = havaIkon(c.weather_code, c.is_day === 1);
-    $("pDerece").textContent = Math.round(c.temperature_2m) + "°";
-    $("pDurum").textContent = havaAd(c.weather_code);
-    $("pHis").textContent = Math.round(c.apparent_temperature) + "°";
-    $("pNem").textContent = "%" + Math.round(c.relative_humidity_2m);
-    $("pRuzgar").textContent = Math.round(c.wind_speed_10m) + " km/s";
-    $("pDogus").textContent = j.daily.sunrise[0].slice(11, 16);
-    $("pBatis").textContent = j.daily.sunset[0].slice(11, 16);
-
-    const simdi = new Date();
-    const anahtar = simdi.getFullYear() + "-" + iki(simdi.getMonth() + 1) + "-" + iki(simdi.getDate()) + "T" + iki(simdi.getHours()) + ":00";
-    let bas = j.hourly.time.indexOf(anahtar); if (bas < 0) bas = 0;
-    const son = bas + 13;
-    grafikCiz(
-      j.hourly.time.slice(bas, son).map(t => +t.slice(11, 13)),
-      j.hourly.temperature_2m.slice(bas, son),
-      j.hourly.precipitation_probability.slice(bas, son).map(v => v || 0),
-      j.hourly.weather_code.slice(bas, son)
-    );
-
-    let g = "";
-    for (let i = 1; i <= 4; i++) {
-      const dt = new Date(j.daily.time[i] + "T12:00");
-      const ad = i === 1 ? "Yarın" : kisaGun[dt.getDay()];
-      const p = j.daily.precipitation_probability_max[i] || 0;
-      g += `<div class="kutu gun"><div><div class="gunAd">${ad}</div><div class="yagis">💧 %${p}</div></div>
-        <div class="gunIkon">${havaIkon(j.daily.weather_code[i])}</div>
-        <div class="gunDer">${Math.round(j.daily.temperature_2m_max[i])}°<br><span>${Math.round(j.daily.temperature_2m_min[i])}°</span></div></div>`;
-    }
-    $("gunler").innerHTML = g;
+    const j = await (await fetch(url, { cache: "no-store" })).json();
+    sonVeri = veriOzet(j); sonBasari = Date.now();
+    try { localStorage.setItem("salonHava", JSON.stringify({ v: sonVeri, t: sonBasari })); } catch (e) {}
+    panoCiz();
   } catch (e) {}
 }
+function kayitliVeriYukle() {
+  try { const k = JSON.parse(localStorage.getItem("salonHava")); if (k && k.v) { sonVeri = k.v; sonBasari = k.t; panoCiz(); } } catch (e) {}
+}
+function baglantiGoster() {
+  const eski = !sonBasari || Date.now() - sonBasari > 30 * 60 * 1000;
+  yaz("baglanti", eski && !$("pano").classList.contains("gizli") ? "📡 İnternet yok, son bilgiler" : "");
+}
 
-const ANIM_SAAT_GUCU = 0.55;
+/* ---------- Pano tasarımları ---------- */
+function grafikSvg(v, sade) {
+  const W = 1000, H = sade ? 260 : 300, solP = 40, sagP = 40, ustP = sade ? 70 : 95, altP = 50;
+  const n = v.sic.length, adim = (W - solP - sagP) / (n - 1);
+  const mn = Math.min(...v.sic) - 1, mx = Math.max(...v.sic) + 1;
+  const y = t => ustP + (mx - t) / (mx - mn) * (H - ustP - altP);
+  const x = i => solP + i * adim;
+  let cizgi = ""; v.sic.forEach((t, i) => { cizgi += (i ? " L" : "M") + x(i).toFixed(1) + " " + y(t).toFixed(1); });
+  const alan = cizgi + ` L${x(n - 1)} ${H - altP} L${x(0)} ${H - altP} Z`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0a040" stop-opacity="0.35"/><stop offset="1" stop-color="#f0a040" stop-opacity="0"/></linearGradient></defs>`;
+  if (!sade) v.yag.forEach((p, i) => { if (p > 0) { const bh = p / 100 * (H - ustP - altP); s += `<rect x="${x(i) - 14}" y="${H - altP - bh}" width="28" height="${bh}" rx="4" fill="#3a7fb8" opacity="0.45"/>`; } });
+  s += `<path d="${alan}" fill="url(#g)"/><path d="${cizgi}" fill="none" stroke="#f0a040" stroke-width="${sade ? 6 : 4}" stroke-linejoin="round"/>`;
+  v.sic.forEach((t, i) => {
+    const etiket = !sade || i % 3 === 0;
+    if (!etiket) return;
+    const gunduz = v.sa[i] >= 7 && v.sa[i] < 18;
+    s += `<circle cx="${x(i)}" cy="${y(t)}" r="${sade ? 9 : 6}" fill="#f0a040"/>`;
+    s += `<text x="${x(i)}" y="${y(t) - 18}" fill="#fff" font-size="${sade ? 38 : 26}" text-anchor="middle">${yuv(t)}°</text>`;
+    s += `<text x="${x(i)}" y="${sade ? 44 : 34}" font-size="${sade ? 40 : 30}" text-anchor="middle">${havaIkon(v.skod[i], gunduz)}</text>`;
+    s += `<text x="${x(i)}" y="${H - 12}" fill="#aaa" font-size="${sade ? 32 : 24}" text-anchor="middle">${i === 0 ? "Şimdi" : iki(v.sa[i]) + ":00"}</text>`;
+    if (!sade && v.yag[i] >= 20) s += `<text x="${x(i)}" y="${H - altP - 8}" fill="#7fc8f0" font-size="20" text-anchor="middle">%${v.yag[i]}</text>`;
+  });
+  return s + "</svg>";
+}
+
+const tasarim = {
+  1: v => `
+    <div style="display:flex;flex-direction:column;justify-content:space-between;height:100%">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="gri" style="font-size:5.5vh" id="pTarih"></div>
+        <div class="bebas" style="font-size:12vh;line-height:0.85" id="pSaat"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:3vw">
+        <span style="font-size:24vh;line-height:1">${havaIkon(v.kod, v.gunduz)}</span>
+        <div>
+          <div class="bebas" style="font-size:32vh;line-height:0.85">${v.der}°</div>
+          <div style="font-size:7.5vh">${havaAd(v.kod)}</div>
+        </div>
+      </div>
+      <div class="gri tekSatir" style="font-size:5.5vh;text-align:center">Hissedilen <span style="color:#fff">${v.his}°</span> &nbsp;·&nbsp; Nem <span class="mavi">%${v.nem}</span> &nbsp;·&nbsp; Yarın ${havaIkon(v.gun[0].kod)} <span style="color:#fff">${v.gun[0].mn}° / ${v.gun[0].mx}°</span></div>
+    </div>`,
+
+  2: v => `
+    <div style="display:flex;height:100%;gap:4vw">
+      <div style="flex:1.15;display:flex;flex-direction:column;justify-content:space-between">
+        <div><div class="bebas" style="font-size:13vh;line-height:0.85" id="pSaat"></div><div class="gri" style="font-size:5vh" id="pTarih"></div></div>
+        <div style="display:flex;align-items:center;gap:2vw">
+          <span style="font-size:22vh;line-height:1">${havaIkon(v.kod, v.gunduz)}</span>
+          <span class="bebas" style="font-size:30vh;line-height:0.85">${v.der}°</span>
+        </div>
+        <div><div style="font-size:7vh">${havaAd(v.kod)}</div>
+        <div class="gri tekSatir" style="font-size:5vh">Hissedilen <span style="color:#fff">${v.his}°</span> · Nem <span class="mavi">%${v.nem}</span></div></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2.5vh;justify-content:center">
+        ${v.gun.slice(0, 3).map(g => `<div class="kutu" style="display:flex;align-items:center;justify-content:space-between;padding:2.5vh 2vw">
+          <span style="font-size:6vh;width:30%">${g.ad}</span><span style="font-size:10vh">${havaIkon(g.kod)}</span>
+          <span style="font-size:6.5vh;text-align:right">${g.mx}° <span class="gri">${g.mn}°</span></span></div>`).join("")}
+      </div>
+    </div>`,
+
+  3: v => `
+    <div style="display:flex;flex-direction:column;height:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:2vw">
+          <span style="font-size:17vh;line-height:1">${havaIkon(v.kod, v.gunduz)}</span>
+          <span class="bebas" style="font-size:22vh;line-height:0.85">${v.der}°</span>
+          <span style="font-size:7vh">${havaAd(v.kod)}</span>
+        </div>
+        <div style="text-align:right"><div class="bebas" style="font-size:13vh;line-height:0.85" id="pSaat"></div><div class="gri" style="font-size:4.6vh" id="pTarih"></div></div>
+      </div>
+      <div style="flex:1;min-height:0;margin-top:2vh">${grafikSvg(v, true)}</div>
+    </div>`,
+
+  4: v => `
+    <div style="display:flex;flex-direction:column;gap:2vh;height:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;height:22vh">
+        <div style="display:flex;align-items:center;gap:2vw">
+          <span style="font-size:14vh;line-height:1">${havaIkon(v.kod, v.gunduz)}</span>
+          <span class="bebas" style="font-size:18vh;line-height:0.9">${v.der}°</span>
+          <div class="tekSatir"><div style="font-size:5.2vh">${havaAd(v.kod)}</div>
+            <div class="gri" style="font-size:4.2vh">Hissedilen <span style="color:#fff">${v.his}°</span></div>
+            <div class="gri" style="font-size:4.2vh">Nem <span style="color:#fff">%${v.nem}</span> · Rüzgâr <span style="color:#fff">${v.ruz} km/s</span></div></div>
+        </div>
+        <div style="text-align:right"><div class="bebas" style="font-size:15vh;line-height:0.9" id="pSaat"></div><div class="gri" style="font-size:4.8vh" id="pTarih"></div>
+          <div class="gri" style="font-size:4.2vh">🌅 <span style="color:#fff">${v.dogus}</span> &nbsp;🌇 <span style="color:#fff">${v.batis}</span></div></div>
+      </div>
+      <div class="kutu" style="flex:1;min-height:0;padding:1.5vh 1vw 0.5vh">${grafikSvg(v, false)}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5vw;height:23vh">
+        ${v.gun.map(g => `<div class="kutu" style="display:flex;align-items:center;justify-content:space-between;padding:0 1.8vw">
+          <div><div class="gri" style="font-size:4.6vh">${g.ad}</div><div class="mavi" style="font-size:3.8vh">💧 %${g.p}</div></div>
+          <div style="font-size:9vh">${havaIkon(g.kod)}</div>
+          <div style="text-align:right;font-size:5.2vh;line-height:1.25">${g.mx}°<br><span style="color:#888">${g.mn}°</span></div></div>`).join("")}
+      </div>
+    </div>`
+};
+function panoCiz() {
+  if (!sonVeri) return;
+  havaModu = { kod: sonVeri.kod, gunduz: sonVeri.gunduz };
+  $("pano").innerHTML = (tasarim[PANO_TIP] || tasarim[1])(sonVeri);
+  saatGuncelle();
+}
+
+/* ---------- Hava animasyonu ---------- */
 let havaModu = { kod: 3, gunduz: true };
 const fon = $("fon"), cx = fon.getContext("2d");
-let FW = 0, FH = 0, parcalar = [], bulutlar = [], yildizlar = [], simsek = 0, sonKare = 0, aktifTur = "";
-function boyutla() { FW = fon.width = Math.round(innerWidth * 0.75); FH = fon.height = Math.round(innerHeight * 0.75); aktifTur = ""; }
+let FW = 0, FH = 0, parcalar = [], bulutlar = [], yildizlar = [], simsek = 0, simsekYol = null, sonKare = 0, aktifTur = "";
+function boyutla() { FW = fon.width = yuv(innerWidth * 0.75); FH = fon.height = yuv(innerHeight * 0.75); aktifTur = ""; }
 addEventListener("resize", boyutla); boyutla();
 const r = (a, b) => a + Math.random() * (b - a);
 function tur() {
@@ -221,18 +270,27 @@ function tur() {
 }
 function kur(t) {
   parcalar = []; bulutlar = []; yildizlar = [];
-  const bulutSay = { yagmur: 4, firtina: 5, kar: 3, kapali: 6, parcali: 3, geceBulut: 3, sis: 0 }[t] || 0;
-  for (let i = 0; i < bulutSay; i++) bulutlar.push({ x: r(-0.2, 1) * FW, y: r(0.02, 0.35) * FH, s: r(0.7, 1.4) * FH * 0.16, v: r(0.08, 0.25), a: t === "kapali" || t === "firtina" ? 0.16 : 0.12 });
-  if (t === "yagmur" || t === "firtina") for (let i = 0; i < (t === "firtina" ? 90 : 65); i++) parcalar.push({ x: r(0, FW), y: r(0, FH), u: r(10, 18), v: r(7, 11) });
-  if (t === "kar") for (let i = 0; i < 55; i++) parcalar.push({ x: r(0, FW), y: r(0, FH), r: r(1.2, 3.2), v: r(0.4, 1.1), f: r(0, 6.28) });
-  if (t === "yildiz" || t === "geceBulut") for (let i = 0; i < 45; i++) yildizlar.push({ x: r(0, FW), y: r(0, FH * 0.7), r: r(0.6, 1.6), f: r(0, 6.28), h: r(0.01, 0.03) });
-  if (t === "sis") for (let i = 0; i < 5; i++) bulutlar.push({ x: r(0, FW), y: (0.15 + i * 0.17) * FH, s: FW * r(0.5, 0.8), v: r(0.1, 0.3) * (i % 2 ? -1 : 1), a: 0.07 });
+  const bulutSay = { yagmur: 5, firtina: 6, kar: 3, kapali: 6, parcali: 3, geceBulut: 3 }[t] || 0;
+  const koyu = t === "yagmur" || t === "firtina";
+  for (let i = 0; i < bulutSay; i++) bulutlar.push({ x: r(-0.2, 1) * FW, y: r(0.0, 0.3) * FH, s: r(0.8, 1.5) * FH * 0.17, v: r(0.1, 0.3), a: koyu ? 0.22 : (t === "kapali" ? 0.16 : 0.12), renk: koyu ? "150,160,175" : "200,210,225" });
+  if (koyu) for (let i = 0; i < (t === "firtina" ? 150 : 120); i++) parcalar.push({ x: r(0, FW), y: r(0, FH), u: r(16, 30), v: r(9, 15), a: r(0.45, 0.85) });
+  if (t === "kar") for (let i = 0; i < 70; i++) parcalar.push({ x: r(0, FW), y: r(0, FH), r: r(1.5, 3.8), v: r(0.4, 1.2), f: r(0, 6.28) });
+  if (t === "yildiz" || t === "geceBulut") for (let i = 0; i < 50; i++) yildizlar.push({ x: r(0, FW), y: r(0, FH * 0.7), r: r(0.6, 1.7), f: r(0, 6.28), h: r(0.01, 0.03) });
+  if (t === "sis") for (let i = 0; i < 5; i++) bulutlar.push({ x: r(0, FW), y: (0.15 + i * 0.17) * FH, s: FW * r(0.5, 0.8), v: r(0.1, 0.3) * (i % 2 ? -1 : 1), a: 0.08 });
 }
 function bulutCiz(b) {
-  cx.fillStyle = `rgba(200,210,225,${b.a})`;
+  cx.fillStyle = `rgba(${b.renk},${b.a})`;
   cx.beginPath();
   [[0, 0, 1], [0.8, 0.15, 0.75], [-0.8, 0.2, 0.7], [0.3, -0.35, 0.8], [-0.35, -0.25, 0.65]].forEach(([dx, dy, k]) => { cx.moveTo(b.x + dx * b.s + k * b.s, b.y + dy * b.s); cx.arc(b.x + dx * b.s, b.y + dy * b.s, k * b.s, 0, 6.28); });
   cx.fill();
+}
+function simsekOlustur() {
+  const yol = []; let x = r(0.15, 0.85) * FW, y = 0; const hedef = r(0.55, 0.85) * FH;
+  yol.push([x, y]);
+  while (y < hedef) { y += r(12, 28); x += r(-22, 22); yol.push([x, y]); }
+  const dal = []; const k = Math.floor(yol.length * r(0.3, 0.6)); let [dx, dy] = yol[k]; dal.push([dx, dy]);
+  for (let i = 0; i < 6; i++) { dy += r(10, 22); dx += r(5, 25) * (Math.random() < 0.5 ? -1 : 1); dal.push([dx, dy]); }
+  return [yol, dal];
 }
 function kare(zaman) {
   requestAnimationFrame(kare);
@@ -241,17 +299,15 @@ function kare(zaman) {
   const t = tur();
   if (t !== aktifTur) { aktifTur = t; kur(t); }
   cx.clearRect(0, 0, FW, FH);
-  const panoAcik = !$("pano").classList.contains("gizli");
-  fon.style.opacity = panoAcik ? 1 : ANIM_SAAT_GUCU;
+  fon.style.opacity = $("pano").classList.contains("gizli") ? ANIM_SAAT_GUCU : 1;
   const sn = zaman / 1000;
 
   if (t === "gunes" || t === "parcali") {
     const gx = FW * 0.85, gy = FH * 0.12, nefes = 1 + Math.sin(sn * 0.8) * 0.06;
     const g = cx.createRadialGradient(gx, gy, 0, gx, gy, FH * 0.75 * nefes);
-    g.addColorStop(0, "rgba(255,190,80,0.30)"); g.addColorStop(0.35, "rgba(255,160,60,0.10)"); g.addColorStop(1, "rgba(255,150,50,0)");
+    g.addColorStop(0, "rgba(255,190,80,0.32)"); g.addColorStop(0.35, "rgba(255,160,60,0.10)"); g.addColorStop(1, "rgba(255,150,50,0)");
     cx.fillStyle = g; cx.fillRect(0, 0, FW, FH);
-    cx.save(); cx.translate(gx, gy); cx.rotate(sn * 0.05);
-    cx.fillStyle = "rgba(255,200,110,0.05)";
+    cx.save(); cx.translate(gx, gy); cx.rotate(sn * 0.05); cx.fillStyle = "rgba(255,200,110,0.05)";
     for (let i = 0; i < 12; i++) { cx.rotate(Math.PI / 6); cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(FW, -FH * 0.08); cx.lineTo(FW, FH * 0.08); cx.fill(); }
     cx.restore();
   }
@@ -269,36 +325,52 @@ function kare(zaman) {
   });
 
   if (t === "yagmur" || t === "firtina") {
-    cx.strokeStyle = "rgba(140,185,235,0.45)"; cx.lineWidth = 1.4; cx.beginPath();
-    parcalar.forEach(p => { p.y += p.v; p.x -= p.v * 0.18; if (p.y > FH) { p.y = -p.u; p.x = r(0, FW * 1.1); } cx.moveTo(p.x, p.y); cx.lineTo(p.x - p.u * 0.18, p.y + p.u); });
-    cx.stroke();
+    cx.lineWidth = 2; cx.lineCap = "round";
+    [0.45, 0.65, 0.85].forEach((esik, k) => {
+      cx.strokeStyle = `rgba(175,210,250,${esik})`; cx.beginPath();
+      parcalar.forEach((p, i) => {
+        if (i % 3 !== k) return;
+        p.y += p.v; p.x -= p.v * 0.2;
+        if (p.y > FH) { p.y = -p.u; p.x = r(0, FW * 1.15); }
+        cx.moveTo(p.x, p.y); cx.lineTo(p.x - p.u * 0.2, p.y + p.u);
+      });
+      cx.stroke();
+    });
+    cx.fillStyle = "rgba(175,210,250,0.35)";
+    for (let i = 0; i < 6; i++) { const sx = r(0, FW), sy = FH - r(0, 6); cx.fillRect(sx - 4, sy, 8, 1.5); }
   }
   if (t === "kar") {
-    cx.fillStyle = "rgba(255,255,255,0.75)";
+    cx.fillStyle = "rgba(255,255,255,0.85)";
     parcalar.forEach(p => { p.f += 0.03; p.y += p.v; p.x += Math.sin(p.f) * 0.5; if (p.y > FH) { p.y = -5; p.x = r(0, FW); } cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.28); cx.fill(); });
   }
   if (t === "firtina") {
-    if (simsek <= 0 && Math.random() < 0.004) simsek = 1;
-    if (simsek > 0) { cx.fillStyle = `rgba(220,230,255,${simsek * 0.35})`; cx.fillRect(0, 0, FW, FH); simsek -= 0.08; }
+    if (simsek <= 0 && Math.random() < 0.007) { simsek = 1; simsekYol = simsekOlustur(); }
+    if (simsek > 0) {
+      const titre = simsek > 0.7 ? 1 : (simsek > 0.5 ? 0.3 : (simsek > 0.35 ? 0.9 : simsek));
+      cx.fillStyle = `rgba(215,225,255,${titre * 0.45})`; cx.fillRect(0, 0, FW, FH);
+      if (simsek > 0.3 && simsekYol) {
+        simsekYol.forEach((yol, n) => {
+          cx.beginPath(); yol.forEach(([px, py], i) => i ? cx.lineTo(px, py) : cx.moveTo(px, py));
+          cx.strokeStyle = `rgba(190,210,255,${0.35 * titre})`; cx.lineWidth = n ? 6 : 12; cx.stroke();
+          cx.strokeStyle = `rgba(255,255,255,${titre})`; cx.lineWidth = n ? 1.5 : 3; cx.stroke();
+        });
+      }
+      simsek -= 0.06;
+    }
   }
 }
 requestAnimationFrame(kare);
 
+/* ---------- Saat başı ding dong ---------- */
 let ses = null, sonCalinan = -1;
-function sesHazirla() {
-  try { if (!ses) ses = new (window.AudioContext || window.webkitAudioContext)(); if (ses.state === "suspended") ses.resume(); } catch (e) {}
-}
+function sesHazirla() { try { if (!ses) ses = new (window.AudioContext || window.webkitAudioContext)(); if (ses.state === "suspended") ses.resume(); } catch (e) {} }
 function nota(frekans, baslangic, sure) {
   const t = ses.currentTime + baslangic;
   [1, 2.01, 3.02].forEach((kat, i) => {
     const o = ses.createOscillator(), g = ses.createGain();
     o.type = "sine"; o.frequency.value = frekans * kat;
-    const v = [0.5, 0.15, 0.06][i];
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(v, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
-    o.connect(g).connect(ses.destination);
-    o.start(t); o.stop(t + sure);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime([0.5, 0.15, 0.06][i], t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
+    o.connect(g).connect(ses.destination); o.start(t); o.stop(t + sure);
   });
 }
 function dingDong() { sesHazirla(); if (!ses) return; nota(659.25, 0, 2.2); nota(523.25, 0.7, 2.8); }
@@ -307,23 +379,26 @@ function saatBasiKontrol(d) {
   if (d.getMinutes() === 0 && d.getSeconds() < 5 && sonCalinan !== h && (h >= SES_BAS || h <= SES_BIT)) { sonCalinan = h; dingDong(); }
 }
 
+/* ---------- Ekran açık kalsın, dokunma ---------- */
 let kilit = null;
 async function uyanikTut() { try { if ("wakeLock" in navigator) kilit = await navigator.wakeLock.request("screen"); } catch (e) {} }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") uyanikTut(); });
-
 document.body.addEventListener("click", () => {
   const el = document.documentElement;
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
   uyanikTut(); sesHazirla();
-  const panoAcik = !$("pano").classList.contains("gizli");
-  elleAcikBitis = panoAcik ? 0 : Date.now() + PANO_SURE * 1000;
+  elleAcikBitis = $("pano").classList.contains("gizli") ? Date.now() + PANO_SURE * 1000 : 0;
   panoKontrol(new Date());
 });
 
-saatGuncelle(); havaGetir(); uyanikTut();
+/* ---------- İnternetsiz açılış için önbellek ---------- */
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("salon-sw.js").catch(() => {});
+addEventListener("online", havaGetir);
+
+kayitliVeriYukle(); saatGuncelle(); havaGetir(); uyanikTut();
 setInterval(saatGuncelle, 1000);
 setInterval(havaGetir, 10 * 60 * 1000);
-setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+setInterval(() => { if (navigator.onLine) location.reload(); }, 6 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
